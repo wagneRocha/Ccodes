@@ -2,7 +2,8 @@
 CC = gcc
 
 # Compiler flags
-CFLAGS = -Wall -Wextra -std=c11 -O3 -march=native -flto
+CFLAGS = -Wall -Wextra -std=c11 -O3 -march=native -flto=auto -g
+# CFLAGS = -Wall -Wextra -std=c11 -O0 -flto -g
 
 # Linker flags
 LDFLAGS = -llapacke -llapack -lblas -lm -flto

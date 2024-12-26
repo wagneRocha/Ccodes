@@ -11,7 +11,7 @@
 /* *********************************************************************************** */
 /* ---------------------------------- TAD strings ------------------------------------ */
 /* *********************************************************************************** */
-void replaceMultipleSpaces(char *str){
+void replace_multiple_spaces(char *str){
 
 	char result[1000];  // Adjust the size based on your needs
 	char *token;
@@ -39,7 +39,7 @@ void replaceMultipleSpaces(char *str){
 	strcpy(str, result);
 }
 /* *********************************************************************************** */
-int *findAllPositions(char *str, char sepChar){
+int *find_all_positions(char *str, char sepChar){
 	
 	int i, j = 0;
 	int *vecSep = alloc_vec_d(9);
@@ -49,6 +49,17 @@ int *findAllPositions(char *str, char sepChar){
 			vecSep[j++] = i;
 	
 	return vecSep;
+}
+/* *********************************************************************************** */
+char *custom_strdup(char *str){
+	
+	size_t len = strlen(str) + 1;
+	char *dup = malloc(len);
+	
+	if(dup)
+		memcpy(dup, str, len);
+	
+	return dup;
 }
 /* *********************************************************************************** */
 void print(char *str){

@@ -11,7 +11,7 @@ int *alloc_vec_d(int n){
 	
 	int *v;
 	v = (int*)malloc(n*sizeof(int));
- 	if (v == NULL){
+	if (v == NULL){
 		printf("Error: Insufficient Memory.\n");
 		exit(1);
 	} 
@@ -19,7 +19,7 @@ int *alloc_vec_d(int n){
 }
 /* *********************************************************************************** */
 int *zeros_vec_d(int n){
- 
+
 	int k;
 	int *v = alloc_vec_d(n);
 	for(k = 0; k < n; k++)
@@ -28,7 +28,7 @@ int *zeros_vec_d(int n){
 }
 /* *********************************************************************************** */
 int *ones_vec_d(int n){
- 
+
 	int k;
 	int *v = alloc_vec_d(n);
 	for(k = 0; k < n; k++)
@@ -79,18 +79,17 @@ int *find_val_vec_d(int *v, int n, int val){
 /* *********************************************************************************** */
 int max_vec_d(int *v, int n){
 
-	if(n > 0){
+	int max = 0;
+	
+	if((v != NULL) && (n > 0)){
 		int k;
-		int max = v[0];
-		
+		max = v[0];
 		for(k = 1; k < n; k++)
 			if(max < v[k])
 				max = v[k];
-		
-		return max;
 	}
-	else
-		return 0;
+	
+	return max;
 }
 /* *********************************************************************************** */
 int *find_ones_position_vec_d(int *v, int n, int num1){
@@ -233,6 +232,36 @@ int *find_val_vec_lf(double *v, int n, double val){
 	return ans;
 }
 /* *********************************************************************************** */
+double min_val_vec_lf(double *v, int n){
+
+	double ans = 0.0;
+
+	if((v != NULL) && (n > 0)){
+		int k;
+		ans = v[0];
+		for(k = 1; k < n; k++)
+			if(v[k] <= ans)
+				ans = v[k];
+	}
+	
+	return ans;
+}
+/* *********************************************************************************** */
+double max_val_vec_lf(double *v, int n){
+
+	double ans = 0.0;
+
+	if((v != NULL) && (n > 0)){
+		int k;
+		ans = v[0];
+		for(k = 1; k < n; k++)
+			if(v[k] >= ans)
+				ans = v[k];
+	}
+	
+	return ans;
+}
+/* *********************************************************************************** */
 double sum_vec_lf(double *v, int n){
 
 	double ans = 0;
@@ -257,6 +286,74 @@ double maxAB_lf(double a, double b){
 		return a;
 	else
 		return b;
+}
+/* *********************************************************************************** */
+int *vec_lf_2_vec_d(double *vec_lf, int n){
+
+	int i;
+
+	int *vec_d = alloc_vec_d(n);
+	
+	for(i = 0; i < n; i++)
+		vec_d[i] = (int) vec_lf[i];
+		
+	return vec_d;
+}
+/* *********************************************************************************** */
+void swap_lf(double *a, double *b){
+
+	double t = (*a);
+	(*a) = (*b);
+	(*b) = t;
+}
+/* *********************************************************************************** */
+void swap_d(int *a, int *b){
+
+	int t = (*a);
+	(*a) = (*b);
+	(*b) = t;
+}
+/* *********************************************************************************** */
+int partition(double array[], int array_index[], int low, int high){
+	
+	// select the rightmost element as pivot
+	double pivot = array[high];
+	// pointer for greater element
+	int i = (low - 1);
+	int j;
+	// traverse each element of the array
+	// compare them with the pivot
+	for(j = low; j < high; j++){
+		if((array[j] < pivot) || (fabs(array[j] - pivot) < 0.000001)){
+			// if element smaller than pivot is found
+			// swap it with the greater element pointed by i
+			i++;
+			// swap element at i with element at j
+			swap_lf(&array[i], &array[j]);
+			swap_d(&array_index[i], &array_index[j]);
+		}
+	}
+
+	// swap the pivot element with the greater element at i
+	swap_lf(&array[i+1], &array[high]);
+	swap_d(&array_index[i+1], &array_index[high]);
+	// return the partition point
+	return (i + 1);
+}
+/* *********************************************************************************** */
+void quicksort(double array[], int array_index[], int low, int high){
+	if(low < high){
+		// find the pivot element such that
+		// elements smaller than pivot are on left of pivot
+		// elements greater than pivot are on right of pivot
+		int p_i = partition(array, array_index, low, high);
+
+		// recursive call on the left of pivot
+		quicksort(array, array_index, low, p_i - 1);
+
+		// recursive call on the right of pivot
+		quicksort(array, array_index, p_i + 1, high);
+	}
 }
 /* *********************************************************************************** */
 /* -------------------------------- TAD 3D double vectors ---------------------------- */
@@ -349,7 +446,7 @@ void blank_string(char *str, int L){
 }
 /* *********************************************************************************** */
 void remove_spaces(char *input, char *output){
-    
+	
 	int i, j = 0;
 	for (i = 0; input[i] != '\0'; i++){
 		if (input[i] != ' '){
@@ -377,7 +474,7 @@ dcinputfile *alloc_vec_dcInputFile(int n){
 proteinstructure *alloc_vec_proteinstructure(int n){
 	
 	proteinstructure *protein = (proteinstructure*)malloc(n*sizeof(proteinstructure));
- 	if (protein == NULL){
+	if (protein == NULL){
 		printf("Error: Insufficient Memory.\n");
 		exit(1);
 	} 
@@ -389,7 +486,7 @@ proteinstructure *alloc_vec_proteinstructure(int n){
 prune_edges_set *alloc_vec_pruneedgesset(int n){
 	
 	prune_edges_set *pruneeges = (prune_edges_set*)malloc(n*sizeof(prune_edges_set));
- 	if (pruneeges == NULL){
+	if (pruneeges == NULL){
 		printf("Error: Insufficient Memory.\n");
 		exit(1);
 	} 

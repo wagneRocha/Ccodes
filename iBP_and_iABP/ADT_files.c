@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
+#include <time.h>
+#include <math.h>
 #include "ADT_vectors.h"
 #include "ADT_matrices.h"
 #include "ADT_files.h"
+#include "ADT_strings.h"
+#define PI 3.14159265359
 
-#define MAX_LINE_LENGTH 128
+#define MAX_LINE_LENGTH 512
 /* *********************************************************************************** */
 /* ---------------------------------- TAD files -------------------------------------- */
 /* *********************************************************************************** */
@@ -127,6 +130,22 @@ int **file_2_mat_d(char filename[], char sep_char){
 	return T;
 }
 /* *********************************************************************************** */
+void vec_lf_2_file(double *v, int m, char filename[]){
+	
+	int i;
+	
+	FILE *fp = fopen(filename, "w");
+	if(fp == NULL){
+		fprintf(stderr, "File opening error for writing.\n");
+		exit(1);
+	}
+
+	for(i = 0; i < m; i++)
+		fprintf(fp, "%.8lf\n", v[i]);
+		
+	fclose(fp);
+}
+/* *********************************************************************************** */
 dcinputfile *dcInputFile_2_dcDataVector(char *fname){
 	
 	char line_i[MAX_LINE_LENGTH], maxsubstring[22];
@@ -151,8 +170,8 @@ dcinputfile *dcInputFile_2_dcDataVector(char *fname){
 			fprintf(stderr, "Error: File has fewer lines than expected.\n");
 			break;
 		}
-		replaceMultipleSpaces(line_i);
-		vecspaces = findAllPositions(line_i, sepChar);
+		replace_multiple_spaces(line_i);
+		vecspaces = find_all_positions(line_i, sepChar);
 		//printf("Line %d: %s", i, line_i);
 		// vertex i ************************************************
 		strcpy(maxsubstring, "                     ");
@@ -231,4 +250,182 @@ dcinputfile *dcInputFile_2_dcDataVector(char *fname){
 	fclose(fp);
 			
 	return dcvector;
+}
+/* *********************************************************************************** */
+void read_input_file(char *fname, char **structure_id, char **structure_chain, char **method, char **fname_dc, char **fname_T0, char **fname_X0, double *timeLimit, double *tolerance, double *angularResolution, int *numOfSols, int *sampleSize){
+	
+	FILE *fp = fopen(fname, "r");
+	if(fp == NULL){
+		printf("Error: file reading error.\n");
+		exit(1);
+	}
+
+	int numLines = num_lines_file(fname);
+	
+	if(numLines == 11){
+		char line_i[MAX_LINE_LENGTH];
+		char *content[numLines];
+		int i = 0;
+		
+		for(i = 0; i < numLines; i++){
+			if (fgets(line_i, MAX_LINE_LENGTH, fp) == NULL){
+				fprintf(stderr, "Error: file has fewer lines than expected.\n");
+				break;
+			}
+			char *colon_position = strchr(line_i, ':');
+			if(colon_position){
+				char *value = colon_position + 1;
+				while(*value == ' ')
+					value++;
+
+				content[i] = custom_strdup(value);
+				if(!content[i]){
+					perror("Error: memory allocation failed");
+					fclose(fp);
+					exit(1);
+				}
+				
+				content[i][strcspn(content[i], "\n")] = '\0';
+			}
+		}
+		
+		fclose(fp);
+		
+		*structure_id = malloc(strlen(content[0]) + 1);
+		strcpy(*structure_id, content[0]);
+		free(content[0]);
+		
+		*structure_chain = malloc(strlen(content[1]) + 1);
+		strcpy(*structure_chain, content[1]);
+		free(content[1]);
+		
+		*method = malloc(strlen(content[2]) + 1);
+		strcpy(*method, content[2]);
+		free(content[2]);
+		
+		*fname_dc = malloc(strlen(content[3]) + 1);
+		strcpy(*fname_dc, content[3]);
+		free(content[3]);
+		
+		*fname_T0 = malloc(strlen(content[4]) + 1);
+		strcpy(*fname_T0, content[4]);
+		free(content[4]);
+		
+		*fname_X0 = malloc(strlen(content[5]) + 1);
+		strcpy(*fname_X0, content[5]);
+		free(content[5]);
+		
+		double days, hours, minutes, seconds;
+		int status = sscanf(content[6], "%lf-%lf:%lf:%lf", &days, &hours, &minutes, &seconds);
+		if(status != 4)
+			printf("Error: the time limit format is incorrect, the correct form is 'days-hours:minutes:seconds'\n");
+		else
+			*timeLimit = 86400.0*days + 3600.0*hours + 60.0*minutes + seconds;
+		free(content[6]);
+		
+		*tolerance = strtod(content[7], NULL);
+		free(content[7]);
+		
+		*angularResolution = strtod(content[8], NULL)*PI/180;
+		free(content[8]);
+		
+		*numOfSols = (int) strtod(content[9], NULL);
+		free(content[9]);
+		
+		*sampleSize = (int) strtod(content[10], NULL);
+		free(content[10]);
+	}
+	else
+		printf("Error: the number of lines in the input file is incorrect; it must contain 11 lines\n");
+}
+/* *********************************************************************************** */
+void save_protein_PDBformat(char method[], proteinstructure *protein, int n, char structure_id[], char model[], char structure_chain[], char fname[]){
+	
+	FILE *fp = fopen(fname, "w");
+	if(!fp){
+		printf("Error: file reading error.\n");
+		exit(1);
+	}
+
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	char date[11];
+	snprintf(date, sizeof(date), "%04d-%02d-%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+
+	// Write HEADER
+	fprintf(fp, "HEADER                                                %s   %s         \n", date, structure_id);
+
+	// Write TITLE
+	if(strcmp(method, "PDB") != 0)
+		fprintf(fp, "TITLE     %-4s solution                                                          \n", method);
+	else
+		fprintf(fp, "TITLE     PDB structure                                                         \n");
+	
+	// Write REMARKS
+	fprintf(fp, "REMARK   2                                                                      \n");
+	fprintf(fp, "REMARK   2 RESOLUTION.    2.00 ANGSTROMS.                                       \n");
+	fprintf(fp, "MODEL   %6s                                                                  \n", model);
+
+	char atomType[7] = "";
+	int serial;
+	char name[5] = "";
+	char name_aux[5] = "";
+	const char altLoc = ' ';
+	char resName[4] = "";
+	char chainID[2] = "";
+	strcpy(chainID, structure_chain);
+	int resSeq;
+	const char iCode = ' ';
+	double x;
+	double y;
+	double z;
+	double occupancy = 1.0;
+	double tempFactor = 1.0;
+	char element[2];
+	element[1] = '\0';
+	const char *charge = "  ";
+	
+	// Write ATOM entries
+	strcpy(atomType, "ATOM  ");
+	int k;
+	for(k = 0; k < n; k++){
+		serial = protein[k].v_k;
+		strcpy(name_aux, protein[k].atom_name);
+		strcpy(resName, protein[k].res_name);
+		resSeq = protein[k].res_seq;
+		x = protein[k].x;
+		y = protein[k].y;
+		z = protein[k].z;
+		element[0] = protein[k].atom_name[0];
+		
+		if(strlen(name_aux) == 4)
+			strcpy(name, name_aux);
+		else if(strlen(name_aux) == 3){
+			strcpy(name, " ");
+			strcat(name, name_aux);
+		}
+		else if(strlen(name_aux) == 2){
+			strcpy(name, " ");
+			strcat(strcat(name, name_aux), " ");
+		}
+		else if(strlen(name_aux) == 1){
+			strcpy(name, " ");
+			strcat(strcat(name, name_aux), "  ");
+		}
+		
+		fprintf(fp, "%6s%5d %4s%c%3s %c%4d%c   %8.3f%8.3f%8.3f%6.2f%6.2f          %2s%2s\n",
+			atomType, serial, name, altLoc, resName, *chainID, resSeq, iCode, x, y, z, occupancy, tempFactor, element, charge);
+	}
+
+	// Write TER entry
+	strcpy(atomType, "TER   ");
+	serial = n + 1;
+	strcpy(name, "    ");
+	strcpy(resName, protein[n-1].res_name);
+	resSeq = protein[n-1].res_seq;
+
+	fprintf(fp, "%6s%5d %4s%c%3s %c%4d%c\n",
+		atomType, serial, name, altLoc, resName, *chainID, resSeq, iCode);
+	
+	fclose(fp);
 }
